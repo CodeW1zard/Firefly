@@ -1,3 +1,4 @@
+numpy
 accelerate==0.21.0
 transformers==4.34
 peft==0.4.0
@@ -16,11 +17,10 @@ scipy
 mmengine
 astunparse==1.6.2
 packaging
+wheels
+torch==2.0
 flash_attn
 datasets
 trl==0.7.11
 typing_extensions==4.9.0
 mpi4py
-numpy
-torch==2.0
-#xformers

@@ -23,7 +23,7 @@ class ModelUtils(object):
         # 加载base model
         model = AutoModelForCausalLM.from_pretrained(
             model_name_or_path,
-            load_in_4bit=load_in_4bit,
+#             load_in_4bit=load_in_4bit,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
             torch_dtype=torch.float16,

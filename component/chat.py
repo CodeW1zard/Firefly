@@ -3,11 +3,12 @@ from transformers.generation.utils import GenerationConfig
 import torch
 from loguru import logger
 import copy
+import json
+import time
+import os
 
-import sys
-sys.path.append("../../")
-from component.utils import ModelUtils
-from component.template import template_dict
+from utils import ModelUtils
+from template import template_dict
 
 
 def build_prompt_chatglm3(tokenizer, query, history, system=None):
@@ -28,7 +29,6 @@ def build_prompt_chatglm3(tokenizer, query, history, system=None):
         input_ids += tokens
 
     return input_ids
-
 
 def build_prompt(tokenizer, template, query, history, system=None):
     template_name = template.template_name
@@ -95,58 +95,46 @@ def main():
 
     model_name_or_path = '/DATA/jupyter/share/LLM_NBS/Baichuan2-13B-Chat'
     template_name = 'baichuan2'
-    adapter_name_or_path = '../../output/baichuan2_13b_b1_acc16_epoch3_rk64_a16_lr2e4/checkpoint-100/'
-
+    file = './data/v1_prompt_label/test.json'
+    file = '/DATA/jupyter/personal/ChatGLM3/finetune_demo/data/v1_prompt_label/test.json'
+    
     template = template_dict[template_name]
     # 是否使用4bit进行推理，能够节省很多显存，但效果可能会有一定的下降
     load_in_4bit = True
-    # 生成超参配置
-    max_new_tokens = 100
-    top_p = 0.9
-    temperature = 0.35
-    repetition_penalty = 1.0
-
-    # 加载模型
-    logger.info(f'Loading model from: {model_name_or_path}')
-    logger.info(f'adapter_name_or_path: {adapter_name_or_path}')
-    model = ModelUtils.load_model(
-        model_name_or_path,
-        load_in_4bit=load_in_4bit,
-        adapter_name_or_path=adapter_name_or_path
-    ).eval()
-    tokenizer = load_tokenizer(model_name_or_path if adapter_name_or_path is None else adapter_name_or_path)
-    if template_name == 'chatglm2':
-        stop_token_id = tokenizer.eos_token_id
-    elif template_name == 'chatglm3':
-        stop_token_id = [tokenizer.eos_token_id, tokenizer.get_command("<|user|>"), tokenizer.get_command("<|observation|>")]
-    else:
-        if template.stop_word is None:
-            template.stop_word = tokenizer.eos_token
-        stop_token_id = tokenizer.encode(template.stop_word, add_special_tokens=False)
-        assert len(stop_token_id) == 1
-        stop_token_id = stop_token_id[0]
-
-    history = []
-
-    query = input('User：')
-    while True:
-        query = query.strip()
-        input_ids = build_prompt(tokenizer, template, query, copy.deepcopy(history), system=None).to(model.device)
-        outputs = model.generate(
-            input_ids=input_ids, max_new_tokens=max_new_tokens, do_sample=True,
-            top_p=top_p, temperature=temperature, repetition_penalty=repetition_penalty,
-            eos_token_id=stop_token_id
-        )
-        outputs = outputs.tolist()[0][len(input_ids[0]):]
-        response = tokenizer.decode(outputs)
-        response = response.strip().replace(template.stop_word, "").strip()
-        # update history
-        history.append({"role": 'user', 'message': query})
-        history.append({"role": 'assistant', 'message': response})
-
-        print("Firefly：{}".format(response))
-        query = input('User：')
-
+    for step in range(300, 901, 100):
+        torch.cuda.empty_cache()
+        adapter_name_or_path = './output/baichuan2_13b_b1_acc16_epoch3_rk64_a16_lr2e4/checkpoint-%d' % step
+        save_file = './data/v1_prompt_label/13b-checkpoint-%d.json' % step
+        # 加载模型
+        logger.info(f'Loading model from: {model_name_or_path}')
+        logger.info(f'adapter_name_or_path: {adapter_name_or_path}')
+#         try:
+        model = ModelUtils.load_model(
+            model_name_or_path,
+            load_in_4bit=load_in_4bit,
+            adapter_name_or_path=adapter_name_or_path
+        ).eval()
+        tokenizer = load_tokenizer(model_name_or_path if adapter_name_or_path is None else adapter_name_or_path)
+        generation_config = GenerationConfig.from_pretrained('/DATA/jupyter/personal/Firefly/output/')
+        generation_config.eos_token_id = tokenizer.eos_token_id
+        logger.info(generation_config)
+        wf = open(save_file, 'w')
+        st = time.time()
+        with open(file, 'r') as rf:
+            for cnt, line in enumerate(rf):
+                if not line:
+                    continue
+                
+                sample = json.loads(line.strip('\n'))
+                prompt = [sample['conversations'][0]]
+                response = model.chat(tokenizer, prompt, generation_config=generation_config)
+                sample['ans'] = response
+                logger.info(f'{cnt} {response}')
+                wf.write(json.dumps(sample, ensure_ascii=False) + '\n')
+        wf.close()
+#         except Exception as e:
+#             logger.error(e)
+#             continue
 
 if __name__ == '__main__':
     main()

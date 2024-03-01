@@ -9,7 +9,7 @@
     "learning_rate": 2e-4,
     "max_seq_length": 1024,
     "logging_steps": 100,
-    "save_steps": 100,
+    "save_steps": 200,
     "save_total_limit": 1,
     "lr_scheduler_type": "constant_with_warmup",
     "warmup_steps": 100,

@@ -1,3 +1,5 @@
+import sys
+sys.path.append('./')
 import argparse
 from loguru import logger
 import os
@@ -267,7 +269,9 @@ def load_model(args, training_args):
         peft_config = None
     else:
         # 找到所有需要插入adapter的全连接层
-        target_modules = find_all_linear_names(model, args.train_mode)
+        #target_modules = find_all_linear_names(model, args.train_mode)
+        target_modules = ['W_pack']
+        print(target_modules)
         peft_config = LoraConfig(
             r=args.lora_rank,
             lora_alpha=args.lora_alpha,
@@ -279,6 +283,7 @@ def load_model(args, training_args):
 
     # init peft model
     if args.train_mode in ['lora', 'qlora'] and args.task_type in ['pretrain', 'sft']:
+        print(peft_config)
         model = get_peft_model(model, peft_config)
         logger.info(f'memory footprint of model: {model.get_memory_footprint() / (1024 * 1024 * 1024)} GB')
         model.print_trainable_parameters()
