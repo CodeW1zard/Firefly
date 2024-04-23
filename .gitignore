@@ -1,0 +1,6 @@
+data
+*.jsonl
+*.csv
+*.xlsx
+.ipynb_checkpoints
+nohup.out

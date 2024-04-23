@@ -1,0 +1,13 @@
+client job submit --project_dir ./ \
+--job_name baichuan2-13b \
+--framework tch \
+--worker_hardware CPU:20,GPU:1,MEM:120,DISK:600 \
+--namespace a100-dev \
+--cluster jscs04  \
+--entrypoint_type sh \
+--entrypoint sleep.sh \
+-E e_enable_webshell=true \
+-E e_enable_cloudide=true \
+-E e_enable_notebook=true \
+-E e_enable_ssh=true \
+-E e_instance_retain=true -E e_retain_time=48h

@@ -1,0 +1,10 @@
+{
+    "max_seq_length": 1024,
+    "per_device_eval_batch_size":8,
+    "eval_file": "./data/v1/test.jsonl",
+    "template_name": "baichuan2",
+    "output_dir": "/DATA/jupyter/share/yuzexi/checkpoints/FireFly/baichuan2_b1_acc16_epoch3_rk64_a16_lr2e4_28k",
+    "model_name_or_path": "/DATA/jupyter/share/LLM_NBS/Baichuan2-7B-Chat_classifier",
+    "adapter_name_or_path": "/DATA/jupyter/share/yuzexi/checkpoints/FireFly/baichuan2_b1_acc16_epoch3_rk64_a16_lr2e4_28k/"
+
+}
